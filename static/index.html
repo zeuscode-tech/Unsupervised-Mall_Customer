@@ -53,6 +53,36 @@
       margin-bottom: 16px;
     }
 
+    .project-desc {
+      font-size: 0.9rem;
+      color: #cbd5e1;
+      margin-bottom: 16px;
+      line-height: 1.45;
+    }
+
+    .unsupervised-box {
+      border: 1px solid #2f3a59;
+      background: #131c31;
+      border-radius: 12px;
+      padding: 12px 14px;
+      margin-bottom: 14px;
+    }
+
+    .unsupervised-title {
+      color: #c7d2fe;
+      font-size: 0.85rem;
+      font-weight: 700;
+      margin-bottom: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+    }
+
+    .unsupervised-text {
+      color: #94a3b8;
+      font-size: 0.85rem;
+      line-height: 1.4;
+    }
+
     .meta-row {
       display: flex;
       flex-wrap: wrap;
@@ -76,6 +106,26 @@
       letter-spacing: 1px;
       color: #64748b;
       margin-bottom: 8px;
+    }
+
+    .figure-wrap {
+      margin-top: 12px;
+      margin-bottom: 18px;
+      border: 1px solid #2d3148;
+      border-radius: 10px;
+      background: #0f1628;
+      overflow: hidden;
+    }
+
+    .figure-wrap img {
+      width: 100%;
+      display: block;
+    }
+
+    .figure-caption {
+      font-size: 0.78rem;
+      color: #64748b;
+      padding: 8px 12px 12px 12px;
     }
 
     .table-wrap {
@@ -334,7 +384,27 @@
       <div class="dataset-title" id="dsName">Загрузка...</div>
       <p class="dataset-desc" id="dsDesc">Считываю информацию о модели и признаках...</p>
 
+      <p class="project-desc">
+        Проект выполняет сегментацию покупателей торгового центра с помощью кластеризации KMeans,
+        чтобы разделить клиентов на группы по покупательскому поведению.
+      </p>
+
+      <div class="unsupervised-box">
+        <div class="unsupervised-title">Что такое Unsupervised Learning</div>
+        <div class="unsupervised-text">
+          Unsupervised Learning — это обучение без целевых меток: модель сама находит скрытую
+          структуру в данных. В этом проекте алгоритм KMeans формирует кластеры клиентов по
+          признакам дохода и индекса трат.
+        </div>
+      </div>
+
       <div class="meta-row" id="featureChips"></div>
+
+      <div class="table-title">Figure: визуализация кластеров</div>
+      <div class="figure-wrap">
+        <img src="/static/cluster-figure.svg" alt="Cluster figure" />
+        <div class="figure-caption">Иллюстрация распределения клиентов по кластерам в пространстве признаков.</div>
+      </div>
 
       <div class="table-title">Первые 10 строк датасета</div>
       <div class="table-wrap">

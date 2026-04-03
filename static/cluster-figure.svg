@@ -1,0 +1,53 @@
+<svg width="1000" height="440" viewBox="0 0 1000 440" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0%" stop-color="#0d1323"/>
+      <stop offset="100%" stop-color="#101c35"/>
+    </linearGradient>
+  </defs>
+
+  <rect x="0" y="0" width="1000" height="440" fill="url(#bg)"/>
+
+  <line x1="80" y1="360" x2="940" y2="360" stroke="#3a4667" stroke-width="2"/>
+  <line x1="80" y1="360" x2="80" y2="40" stroke="#3a4667" stroke-width="2"/>
+
+  <text x="860" y="392" fill="#8fa3d1" font-size="14" font-family="Segoe UI, Arial, sans-serif">Annual Income (k$)</text>
+  <text x="18" y="70" fill="#8fa3d1" font-size="14" font-family="Segoe UI, Arial, sans-serif" transform="rotate(-90 18,70)">Spending Score (1-100)</text>
+
+  <circle cx="610" cy="205" r="7" fill="#60a5fa"/>
+  <circle cx="640" cy="195" r="7" fill="#60a5fa"/>
+  <circle cx="590" cy="215" r="7" fill="#60a5fa"/>
+  <circle cx="620" cy="225" r="7" fill="#60a5fa"/>
+
+  <circle cx="780" cy="95" r="7" fill="#fbbf24"/>
+  <circle cx="820" cy="105" r="7" fill="#fbbf24"/>
+  <circle cx="760" cy="120" r="7" fill="#fbbf24"/>
+  <circle cx="840" cy="85" r="7" fill="#fbbf24"/>
+
+  <circle cx="230" cy="120" r="7" fill="#f87171"/>
+  <circle cx="260" cy="98" r="7" fill="#f87171"/>
+  <circle cx="200" cy="140" r="7" fill="#f87171"/>
+  <circle cx="275" cy="132" r="7" fill="#f87171"/>
+
+  <circle cx="820" cy="305" r="7" fill="#4ade80"/>
+  <circle cx="790" cy="320" r="7" fill="#4ade80"/>
+  <circle cx="850" cy="330" r="7" fill="#4ade80"/>
+  <circle cx="770" cy="300" r="7" fill="#4ade80"/>
+
+  <circle cx="210" cy="315" r="7" fill="#94a3b8"/>
+  <circle cx="240" cy="330" r="7" fill="#94a3b8"/>
+  <circle cx="180" cy="300" r="7" fill="#94a3b8"/>
+  <circle cx="260" cy="305" r="7" fill="#94a3b8"/>
+
+  <rect x="650" y="28" width="285" height="134" rx="10" fill="#121b31" stroke="#2d3a5a"/>
+  <circle cx="675" cy="53" r="6" fill="#60a5fa"/>
+  <text x="690" y="58" fill="#d7e3ff" font-size="13" font-family="Segoe UI, Arial, sans-serif">Cluster 0 - Middle</text>
+  <circle cx="675" cy="78" r="6" fill="#fbbf24"/>
+  <text x="690" y="83" fill="#d7e3ff" font-size="13" font-family="Segoe UI, Arial, sans-serif">Cluster 1 - VIP</text>
+  <circle cx="675" cy="103" r="6" fill="#f87171"/>
+  <text x="690" y="108" fill="#d7e3ff" font-size="13" font-family="Segoe UI, Arial, sans-serif">Cluster 2 - Impulsive</text>
+  <circle cx="675" cy="128" r="6" fill="#4ade80"/>
+  <text x="690" y="133" fill="#d7e3ff" font-size="13" font-family="Segoe UI, Arial, sans-serif">Cluster 3 - Careful</text>
+  <circle cx="840" cy="53" r="6" fill="#94a3b8"/>
+  <text x="855" y="58" fill="#d7e3ff" font-size="13" font-family="Segoe UI, Arial, sans-serif">Cluster 4 - Economical</text>
+</svg>
