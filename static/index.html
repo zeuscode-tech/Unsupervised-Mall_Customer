@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mall Customers — Сегментация</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: #0f1117;
+      color: #e2e8f0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 24px;
+    }
+
+    .top-wrap {
+      width: 100%;
+      max-width: 980px;
+      margin-bottom: 28px;
+    }
+
+    .info-card {
+      background: #1e2130;
+      border: 1px solid #2d3148;
+      border-radius: 16px;
+      padding: 22px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.35);
+    }
+
+    .dataset-kicker {
+      font-size: 0.74rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #64748b;
+      margin-bottom: 8px;
+    }
+
+    .dataset-title {
+      font-size: 1.6rem;
+      font-weight: 700;
+      color: #e2e8f0;
+      margin-bottom: 10px;
+    }
+
+    .dataset-desc {
+      font-size: 0.95rem;
+      color: #94a3b8;
+      margin-bottom: 16px;
+    }
+
+    .meta-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 18px;
+    }
+
+    .meta-chip {
+      border: 1px solid #34405f;
+      background: #151b2d;
+      color: #c7d2fe;
+      border-radius: 999px;
+      padding: 6px 12px;
+      font-size: 0.8rem;
+      white-space: nowrap;
+    }
+
+    .table-title {
+      font-size: 0.84rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #64748b;
+      margin-bottom: 8px;
+    }
+
+    .table-wrap {
+      border: 1px solid #2d3148;
+      border-radius: 10px;
+      overflow-x: auto;
+      overflow-y: hidden;
+      background: #101520;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 760px;
+    }
+
+    th, td {
+      padding: 10px 12px;
+      text-align: left;
+      border-bottom: 1px solid #24304a;
+      font-size: 0.82rem;
+    }
+
+    th {
+      color: #c7d2fe;
+      background: #18233b;
+      position: sticky;
+      top: 0;
+      z-index: 1;
+    }
+
+    td { color: #cbd5e1; }
+
+    tr:last-child td { border-bottom: none; }
+
+    h1 {
+      font-size: 1.8rem;
+      font-weight: 700;
+      text-align: center;
+      margin-bottom: 6px;
+      background: linear-gradient(135deg, #818cf8, #c084fc);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .subtitle {
+      color: #64748b;
+      text-align: center;
+      font-size: 0.9rem;
+      margin-bottom: 32px;
+    }
+
+    .card {
+      background: #1e2130;
+      border: 1px solid #2d3148;
+      border-radius: 16px;
+      padding: 32px;
+      width: 100%;
+      max-width: 480px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+    }
+
+    .field { margin-bottom: 24px; }
+
+    label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.85rem;
+      color: #94a3b8;
+      margin-bottom: 10px;
+    }
+
+    label span {
+      font-weight: 600;
+      color: #c084fc;
+      font-size: 1rem;
+    }
+
+    input[type=range] {
+      -webkit-appearance: none;
+      width: 100%;
+      height: 6px;
+      border-radius: 999px;
+      background: #2d3148;
+      outline: none;
+      cursor: pointer;
+    }
+
+    input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #818cf8, #c084fc);
+      cursor: pointer;
+      box-shadow: 0 0 8px rgba(192, 132, 252, 0.5);
+      transition: transform 0.15s;
+    }
+
+    input[type=range]::-webkit-slider-thumb:hover { transform: scale(1.2); }
+
+    .range-labels {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.72rem;
+      color: #475569;
+      margin-top: 4px;
+    }
+
+    button {
+      width: 100%;
+      padding: 14px;
+      border: none;
+      border-radius: 10px;
+      background: linear-gradient(135deg, #818cf8, #c084fc);
+      color: #fff;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      letter-spacing: 0.3px;
+      transition: opacity 0.2s, transform 0.1s;
+      margin-top: 8px;
+    }
+
+    button:hover { opacity: 0.9; }
+    button:active { transform: scale(0.98); }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .result {
+      margin-top: 24px;
+      border-radius: 12px;
+      padding: 20px 24px;
+      display: none;
+      align-items: center;
+      gap: 16px;
+      animation: fadeIn 0.3s ease;
+    }
+
+    .result.show { display: flex; }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .result-icon { font-size: 2.4rem; line-height: 1; }
+
+    .result-body { flex: 1; }
+
+    .result-label {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      opacity: 0.6;
+      margin-bottom: 2px;
+    }
+
+    .result-name {
+      font-size: 1.4rem;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+
+    .result-desc { font-size: 0.83rem; opacity: 0.7; }
+
+    .result-badge {
+      font-size: 0.75rem;
+      padding: 3px 10px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.1);
+      white-space: nowrap;
+    }
+
+    /* Cluster colors */
+    .c0 { background: rgba(59,130,246,0.12); border: 1px solid rgba(59,130,246,0.3); }
+    .c0 .result-name { color: #60a5fa; }
+    .c1 { background: rgba(234,179,8,0.12); border: 1px solid rgba(234,179,8,0.3); }
+    .c1 .result-name { color: #fbbf24; }
+    .c2 { background: rgba(239,68,68,0.12); border: 1px solid rgba(239,68,68,0.3); }
+    .c2 .result-name { color: #f87171; }
+    .c3 { background: rgba(34,197,94,0.12); border: 1px solid rgba(34,197,94,0.3); }
+    .c3 .result-name { color: #4ade80; }
+    .c4 { background: rgba(148,163,184,0.1); border: 1px solid rgba(148,163,184,0.25); }
+    .c4 .result-name { color: #94a3b8; }
+
+    .legend {
+      width: 100%;
+      max-width: 480px;
+      margin-top: 20px;
+    }
+
+    .legend-title {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #475569;
+      margin-bottom: 10px;
+      text-align: center;
+    }
+
+    .legend-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .legend-item {
+      background: #1e2130;
+      border: 1px solid #2d3148;
+      border-radius: 10px;
+      padding: 10px 14px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 0.8rem;
+    }
+
+    .legend-item .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .dot-0 { background: #60a5fa; }
+    .dot-1 { background: #fbbf24; }
+    .dot-2 { background: #f87171; }
+    .dot-3 { background: #4ade80; }
+    .dot-4 { background: #94a3b8; }
+
+    .legend-item .li-name { font-weight: 600; color: #e2e8f0; }
+    .legend-item .li-desc { color: #64748b; font-size: 0.73rem; }
+
+    .error-msg {
+      color: #f87171;
+      font-size: 0.82rem;
+      margin-top: 12px;
+      text-align: center;
+      display: none;
+    }
+
+    @media (max-width: 700px) {
+      .info-card { padding: 18px; }
+      .dataset-title { font-size: 1.3rem; }
+      .card { padding: 22px; }
+      .legend-grid { grid-template-columns: 1fr; }
+      .legend-item[style] { grid-column: span 1 !important; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="top-wrap">
+    <div class="info-card">
+      <div class="dataset-kicker">Датасет</div>
+      <div class="dataset-title" id="dsName">Загрузка...</div>
+      <p class="dataset-desc" id="dsDesc">Считываю информацию о модели и признаках...</p>
+
+      <div class="meta-row" id="featureChips"></div>
+
+      <div class="table-title">Первые 10 строк датасета</div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr id="tableHead"></tr>
+          </thead>
+          <tbody id="tableBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <h1>Сегментация покупателей</h1>
+  <p class="subtitle">Введите доход и уровень трат — модель определит сегмент</p>
+
+  <div class="card">
+    <div class="field">
+      <label>
+        Годовой доход
+        <span id="incomeVal">55</span>
+      </label>
+      <input type="range" id="income" min="1" max="150" value="55"
+             oninput="document.getElementById('incomeVal').textContent=this.value" />
+      <div class="range-labels"><span>1k$</span><span>150k$</span></div>
+    </div>
+
+    <div class="field">
+      <label>
+        Индекс трат (1–100)
+        <span id="spendingVal">50</span>
+      </label>
+      <input type="range" id="spending" min="1" max="100" value="50"
+             oninput="document.getElementById('spendingVal').textContent=this.value" />
+      <div class="range-labels"><span>1</span><span>100</span></div>
+    </div>
+
+    <button id="btn" onclick="predict()">Определить сегмент</button>
+
+    <p class="error-msg" id="err">Ошибка запроса. Проверьте, запущен ли сервер.</p>
+
+    <div class="result" id="result">
+      <div class="result-icon" id="rIcon"></div>
+      <div class="result-body">
+        <div class="result-label">Сегмент покупателя</div>
+        <div class="result-name" id="rName"></div>
+        <div class="result-desc" id="rDesc"></div>
+      </div>
+      <div class="result-badge" id="rBadge"></div>
+    </div>
+  </div>
+
+  <div class="legend">
+    <div class="legend-title">Все сегменты</div>
+    <div class="legend-grid">
+      <div class="legend-item">
+        <div class="dot dot-0"></div>
+        <div><div class="li-name">Средний класс</div><div class="li-desc">Средний доход и траты</div></div>
+      </div>
+      <div class="legend-item">
+        <div class="dot dot-1"></div>
+        <div><div class="li-name">VIP</div><div class="li-desc">Высокий доход, много тратят</div></div>
+      </div>
+      <div class="legend-item">
+        <div class="dot dot-2"></div>
+        <div><div class="li-name">Импульсивные</div><div class="li-desc">Мало зарабатывают, много тратят</div></div>
+      </div>
+      <div class="legend-item">
+        <div class="dot dot-3"></div>
+        <div><div class="li-name">Осторожные</div><div class="li-desc">Высокий доход, мало тратят</div></div>
+      </div>
+      <div class="legend-item" style="grid-column: span 2;">
+        <div class="dot dot-4"></div>
+        <div><div class="li-name">Экономные</div><div class="li-desc">Небольшой доход, мало тратят</div></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const CLUSTERS = {
+      0: { icon: '🏙️', desc: 'Умеренный доход, умеренные расходы. Стабильный сегмент.', cls: 'c0' },
+      1: { icon: '💎', desc: 'Высокий доход и высокие траты. Целевой VIP-сегмент.', cls: 'c1' },
+      2: { icon: '🛍️', desc: 'Низкий доход, но высокие траты. Склонны к импульсивным покупкам.', cls: 'c2' },
+      3: { icon: '🏦', desc: 'Высокий доход, но тратят мало. Осторожны и расчётливы.', cls: 'c3' },
+      4: { icon: '💰', desc: 'Небольшой доход и минимальные траты. Экономят на всём.', cls: 'c4' },
+    };
+
+    function renderDatasetInfo(payload) {
+      const dsName = document.getElementById('dsName');
+      const dsDesc = document.getElementById('dsDesc');
+      const chips  = document.getElementById('featureChips');
+      const head   = document.getElementById('tableHead');
+      const body   = document.getElementById('tableBody');
+
+      dsName.textContent = payload.dataset_name;
+      dsDesc.textContent = `Модель обучения: ${payload.model}. Для кластеризации использованы признаки: ${payload.features_used.join(', ')}.`;
+
+      chips.innerHTML = '';
+      payload.features_used.forEach((feature) => {
+        const chip = document.createElement('span');
+        chip.className = 'meta-chip';
+        chip.textContent = `Признак: ${feature}`;
+        chips.appendChild(chip);
+      });
+
+      head.innerHTML = '';
+      payload.preview_columns.forEach((column) => {
+        const th = document.createElement('th');
+        th.textContent = column;
+        head.appendChild(th);
+      });
+
+      body.innerHTML = '';
+      payload.first_10_rows.forEach((row) => {
+        const tr = document.createElement('tr');
+        payload.preview_columns.forEach((column) => {
+          const td = document.createElement('td');
+          td.textContent = row[column];
+          tr.appendChild(td);
+        });
+        body.appendChild(tr);
+      });
+    }
+
+    async function loadDatasetInfo() {
+      try {
+        const res = await fetch('/dataset-info');
+        if (!res.ok) throw new Error('dataset-info request failed');
+        const payload = await res.json();
+        renderDatasetInfo(payload);
+      } catch {
+        document.getElementById('dsName').textContent = 'Mall_Customers.csv';
+        document.getElementById('dsDesc').textContent = 'Не удалось загрузить информацию о датасете. Проверьте, что сервер запущен.';
+      }
+    }
+
+    async function predict() {
+      const income   = Number(document.getElementById('income').value);
+      const spending = Number(document.getElementById('spending').value);
+      const btn      = document.getElementById('btn');
+      const err      = document.getElementById('err');
+      const result   = document.getElementById('result');
+
+      btn.disabled = true;
+      btn.textContent = 'Определяю...';
+      err.style.display = 'none';
+      result.classList.remove('show');
+
+      try {
+        const res  = await fetch('/predict', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ income, spending }),
+        });
+        const data = await res.json();
+        const c    = CLUSTERS[data.cluster];
+
+        result.className = 'result show ' + c.cls;
+        document.getElementById('rIcon').textContent   = c.icon;
+        document.getElementById('rName').textContent   = data.name;
+        document.getElementById('rDesc').textContent   = c.desc;
+        document.getElementById('rBadge').textContent  = `Кластер ${data.cluster}`;
+      } catch {
+        err.style.display = 'block';
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Определить сегмент';
+      }
+    }
+
+    loadDatasetInfo();
+  </script>
+</body>
+</html>
