@@ -100,6 +100,75 @@
       white-space: nowrap;
     }
 
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .stat-card {
+      border: 1px solid #2f3a59;
+      background: #111a30;
+      border-radius: 10px;
+      padding: 10px 12px;
+    }
+
+    .stat-label {
+      font-size: 0.73rem;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: #64748b;
+      margin-bottom: 4px;
+    }
+
+    .stat-value {
+      font-size: 1.05rem;
+      color: #e2e8f0;
+      font-weight: 700;
+    }
+
+    .cluster-dist {
+      border: 1px solid #2d3148;
+      border-radius: 10px;
+      padding: 10px;
+      background: #101520;
+      margin-bottom: 16px;
+    }
+
+    .cluster-row {
+      display: grid;
+      grid-template-columns: 64px 1fr 34px;
+      gap: 8px;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .cluster-row:last-child { margin-bottom: 0; }
+
+    .cluster-name {
+      font-size: 0.75rem;
+      color: #94a3b8;
+    }
+
+    .cluster-bar {
+      height: 8px;
+      border-radius: 999px;
+      background: #25314e;
+      overflow: hidden;
+    }
+
+    .cluster-bar-fill {
+      height: 100%;
+      border-radius: 999px;
+    }
+
+    .cluster-count {
+      font-size: 0.75rem;
+      color: #cbd5e1;
+      text-align: right;
+    }
+
     .table-title {
       font-size: 0.84rem;
       text-transform: uppercase;
@@ -115,11 +184,13 @@
       border-radius: 10px;
       background: #0f1628;
       overflow: hidden;
+      padding: 10px;
     }
 
-    .figure-wrap img {
+    .figure-wrap svg {
       width: 100%;
       display: block;
+      height: 320px;
     }
 
     .figure-caption {
@@ -383,6 +454,7 @@
       <div class="dataset-kicker">Датасет</div>
       <div class="dataset-title" id="dsName">Загрузка...</div>
       <p class="dataset-desc" id="dsDesc">Считываю информацию о модели и признаках...</p>
+      <p class="dataset-desc" id="lastUpdated" style="font-size:0.8rem; margin-top:-8px; margin-bottom:14px;">Last update: --</p>
 
       <p class="project-desc">
         Проект выполняет сегментацию покупателей торгового центра с помощью кластеризации KMeans,
@@ -400,10 +472,16 @@
 
       <div class="meta-row" id="featureChips"></div>
 
+      <div class="table-title">Статистика датасета</div>
+      <div class="stats-grid" id="statsGrid"></div>
+
+      <div class="table-title">Распределение по кластерам</div>
+      <div class="cluster-dist" id="clusterDist"></div>
+
       <div class="table-title">Figure: визуализация кластеров</div>
       <div class="figure-wrap">
-        <img src="/static/cluster-figure.svg" alt="Cluster figure" />
-        <div class="figure-caption">Иллюстрация распределения клиентов по кластерам в пространстве признаков.</div>
+        <svg id="clusterFigure" viewBox="0 0 900 320" preserveAspectRatio="none"></svg>
+        <div class="figure-caption" id="figureCaption">Распределение клиентов по кластерам в пространстве признаков.</div>
       </div>
 
       <div class="table-title">Первые 10 строк датасета</div>
@@ -459,28 +537,7 @@
 
   <div class="legend">
     <div class="legend-title">Все сегменты</div>
-    <div class="legend-grid">
-      <div class="legend-item">
-        <div class="dot dot-0"></div>
-        <div><div class="li-name">Средний класс</div><div class="li-desc">Средний доход и траты</div></div>
-      </div>
-      <div class="legend-item">
-        <div class="dot dot-1"></div>
-        <div><div class="li-name">VIP</div><div class="li-desc">Высокий доход, много тратят</div></div>
-      </div>
-      <div class="legend-item">
-        <div class="dot dot-2"></div>
-        <div><div class="li-name">Импульсивные</div><div class="li-desc">Мало зарабатывают, много тратят</div></div>
-      </div>
-      <div class="legend-item">
-        <div class="dot dot-3"></div>
-        <div><div class="li-name">Осторожные</div><div class="li-desc">Высокий доход, мало тратят</div></div>
-      </div>
-      <div class="legend-item" style="grid-column: span 2;">
-        <div class="dot dot-4"></div>
-        <div><div class="li-name">Экономные</div><div class="li-desc">Небольшой доход, мало тратят</div></div>
-      </div>
-    </div>
+    <div class="legend-grid" id="legendGrid"></div>
   </div>
 
   <script>
@@ -492,15 +549,111 @@
       4: { icon: '💰', desc: 'Небольшой доход и минимальные траты. Экономят на всём.', cls: 'c4' },
     };
 
+    const PALETTE = ['#60a5fa', '#fbbf24', '#f87171', '#4ade80', '#94a3b8', '#818cf8', '#22d3ee', '#fb7185', '#34d399', '#f59e0b'];
+
+    function colorForCluster(clusterId) {
+      const idx = Number(clusterId);
+      if (Number.isNaN(idx)) return '#818cf8';
+      return PALETTE[((idx % PALETTE.length) + PALETTE.length) % PALETTE.length];
+    }
+
+    function renderDynamicLegend(payload) {
+      const legend = document.getElementById('legendGrid');
+      legend.innerHTML = '';
+      Object.keys(payload.cluster_distribution).forEach((clusterId) => {
+        const name = (payload.cluster_names && payload.cluster_names[clusterId]) || `Cluster ${clusterId}`;
+
+        const item = document.createElement('div');
+        item.className = 'legend-item';
+
+        const dot = document.createElement('div');
+        dot.className = 'dot';
+        dot.style.background = colorForCluster(clusterId);
+
+        const textWrap = document.createElement('div');
+        const title = document.createElement('div');
+        title.className = 'li-name';
+        title.textContent = name;
+        const desc = document.createElement('div');
+        desc.className = 'li-desc';
+        desc.textContent = `Cluster ${clusterId}`;
+
+        textWrap.appendChild(title);
+        textWrap.appendChild(desc);
+        item.appendChild(dot);
+        item.appendChild(textWrap);
+        legend.appendChild(item);
+      });
+    }
+
+    function renderDynamicFigure(payload) {
+      const svg = document.getElementById('clusterFigure');
+      const caption = document.getElementById('figureCaption');
+      const points = payload.scatter_points || [];
+
+      svg.innerHTML = '';
+      if (!points.length) {
+        caption.textContent = 'Нет данных для визуализации.';
+        return;
+      }
+
+      const width = 900;
+      const height = 320;
+      const margin = { top: 20, right: 20, bottom: 36, left: 48 };
+      const plotW = width - margin.left - margin.right;
+      const plotH = height - margin.top - margin.bottom;
+
+      const incomes = points.map((p) => p.income);
+      const spendings = points.map((p) => p.spending);
+      const minIncome = Math.min(...incomes);
+      const maxIncome = Math.max(...incomes);
+      const minSpending = Math.min(...spendings);
+      const maxSpending = Math.max(...spendings);
+
+      const sx = (v) => margin.left + ((v - minIncome) / Math.max(maxIncome - minIncome, 1)) * plotW;
+      const sy = (v) => margin.top + (1 - (v - minSpending) / Math.max(maxSpending - minSpending, 1)) * plotH;
+
+      const axisColor = '#344569';
+      const addLine = (x1, y1, x2, y2) => {
+        const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        line.setAttribute('x1', x1);
+        line.setAttribute('y1', y1);
+        line.setAttribute('x2', x2);
+        line.setAttribute('y2', y2);
+        line.setAttribute('stroke', axisColor);
+        line.setAttribute('stroke-width', '1.5');
+        svg.appendChild(line);
+      };
+
+      addLine(margin.left, margin.top + plotH, margin.left + plotW, margin.top + plotH);
+      addLine(margin.left, margin.top, margin.left, margin.top + plotH);
+
+      points.forEach((p) => {
+        const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        circle.setAttribute('cx', sx(p.income));
+        circle.setAttribute('cy', sy(p.spending));
+        circle.setAttribute('r', '3.2');
+        circle.setAttribute('fill', colorForCluster(p.cluster));
+        circle.setAttribute('opacity', '0.9');
+        svg.appendChild(circle);
+      });
+
+      caption.textContent = `Реальная визуализация текущей модели: ${payload.n_clusters} кластеров.`;
+    }
+
     function renderDatasetInfo(payload) {
       const dsName = document.getElementById('dsName');
       const dsDesc = document.getElementById('dsDesc');
+      const lastUpdated = document.getElementById('lastUpdated');
       const chips  = document.getElementById('featureChips');
       const head   = document.getElementById('tableHead');
       const body   = document.getElementById('tableBody');
+      const stats  = document.getElementById('statsGrid');
+      const dist   = document.getElementById('clusterDist');
 
       dsName.textContent = payload.dataset_name;
       dsDesc.textContent = `Модель обучения: ${payload.model}. Для кластеризации использованы признаки: ${payload.features_used.join(', ')}.`;
+      lastUpdated.textContent = `Last update: ${new Date().toLocaleTimeString()}`;
 
       chips.innerHTML = '';
       payload.features_used.forEach((feature) => {
@@ -509,6 +662,69 @@
         chip.textContent = `Признак: ${feature}`;
         chips.appendChild(chip);
       });
+
+      const statsList = [
+        ['Model Clusters', payload.n_clusters],
+        ['Rows', payload.stats.rows],
+        ['Columns', payload.stats.columns],
+        ['Missing Values', payload.stats.missing_values],
+        ['Avg Income', payload.stats.avg_income],
+        ['Avg Spending', payload.stats.avg_spending],
+        ['Income Range', `${payload.stats.min_income}-${payload.stats.max_income}`],
+        ['Spending Range', `${payload.stats.min_spending}-${payload.stats.max_spending}`],
+      ];
+
+      stats.innerHTML = '';
+      statsList.forEach(([label, value]) => {
+        const card = document.createElement('div');
+        card.className = 'stat-card';
+
+        const l = document.createElement('div');
+        l.className = 'stat-label';
+        l.textContent = label;
+
+        const v = document.createElement('div');
+        v.className = 'stat-value';
+        v.textContent = value;
+
+        card.appendChild(l);
+        card.appendChild(v);
+        stats.appendChild(card);
+      });
+
+      const distEntries = Object.entries(payload.cluster_distribution);
+      const maxCount = Math.max(...distEntries.map(([, count]) => count), 1);
+      dist.innerHTML = '';
+      distEntries.forEach(([clusterId, count]) => {
+        const row = document.createElement('div');
+        row.className = 'cluster-row';
+
+        const name = document.createElement('div');
+        name.className = 'cluster-name';
+        const dynamicClusterName = (payload.cluster_names && payload.cluster_names[clusterId]) || `Cluster ${clusterId}`;
+        name.textContent = dynamicClusterName;
+
+        const bar = document.createElement('div');
+        bar.className = 'cluster-bar';
+
+        const fill = document.createElement('div');
+        fill.className = 'cluster-bar-fill';
+        fill.style.width = `${(count / maxCount) * 100}%`;
+        fill.style.background = colorForCluster(clusterId);
+        bar.appendChild(fill);
+
+        const value = document.createElement('div');
+        value.className = 'cluster-count';
+        value.textContent = count;
+
+        row.appendChild(name);
+        row.appendChild(bar);
+        row.appendChild(value);
+        dist.appendChild(row);
+      });
+
+      renderDynamicLegend(payload);
+      renderDynamicFigure(payload);
 
       head.innerHTML = '';
       payload.preview_columns.forEach((column) => {
@@ -538,6 +754,12 @@
       } catch {
         document.getElementById('dsName').textContent = 'Mall_Customers.csv';
         document.getElementById('dsDesc').textContent = 'Не удалось загрузить информацию о датасете. Проверьте, что сервер запущен.';
+        document.getElementById('lastUpdated').textContent = 'Last update: error';
+        document.getElementById('statsGrid').innerHTML = '';
+        document.getElementById('clusterDist').innerHTML = '';
+        document.getElementById('legendGrid').innerHTML = '';
+        document.getElementById('clusterFigure').innerHTML = '';
+        document.getElementById('figureCaption').textContent = 'Не удалось загрузить визуализацию.';
       }
     }
 
@@ -560,13 +782,14 @@
           body: JSON.stringify({ income, spending }),
         });
         const data = await res.json();
-        const c    = CLUSTERS[data.cluster];
+        const c    = CLUSTERS[data.cluster] || { icon: '📊', desc: 'Сегмент определен моделью.', cls: 'c0' };
 
         result.className = 'result show ' + c.cls;
         document.getElementById('rIcon').textContent   = c.icon;
         document.getElementById('rName').textContent   = data.name;
         document.getElementById('rDesc').textContent   = c.desc;
         document.getElementById('rBadge').textContent  = `Кластер ${data.cluster}`;
+        await loadDatasetInfo();
       } catch {
         err.style.display = 'block';
       } finally {
@@ -576,6 +799,7 @@
     }
 
     loadDatasetInfo();
+    setInterval(loadDatasetInfo, 5000);
   </script>
 </body>
 </html>
